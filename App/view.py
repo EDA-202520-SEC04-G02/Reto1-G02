@@ -1,12 +1,19 @@
 import sys
 
+# Importaciones necesarias
+import App.logic as logic # Portar logic porque, pues muy dificil sin logic no?
+from tabulate import tabulate # Para imprimir tablas bonitas
+import os
+data_dir = os.path.dirname(os.path.realpath('__file__')) + '/Data/'
+# -------------------------------------------------
 
 def new_logic():
     """
         Se crea una instancia del controlador
     """
-    #TODO: Llamar la función de la lógica donde se crean las estructuras de datos
-    pass
+    #TODO DONE: Llamar la función de la lógica donde se crean las estructuras de datos
+    control = logic.new_logic()
+    return control
 
 def print_menu():
     print("Bienvenido")
@@ -25,8 +32,30 @@ def load_data(control):
     """
     Carga los datos
     """
-    #TODO: Realizar la carga de datos
-    pass
+    taxisfile = data_dir + "taxis-small.csv"           # Contruimos las rutas de los archivos aquí
+    neighfile = data_dir + "nyc-neighborhoods.csv" # Así no hay que importarlos en logic, que es más limpio
+    #TODO DONE: Realizar la carga de datos
+    resultados = logic.load_data(control, taxisfile, neighfile) # Nota: Aquí se pasa sin el filename porque en logic lo importo por aparte, como se ha hecho en los otros laboratoríos
+    print("\n=== Resultados de la carga de datos ===")
+    print(f"Tiempo de carga: {resultados['time_ms']:.2f} ms")
+    print(f"Total de trayectos cargados: {resultados['total_trips']}")
+
+    # Trayecto mínimo
+    min_t = resultados["min_trip"]
+    print("\nTrayecto de menor distancia (>0):")
+    print(f"Inicio: {min_t['pickup_datetime']} | Distancia: {min_t['trip_distance']} millas | Total: {min_t['total_amount']} USD")
+
+    # Trayecto máximo
+    max_t = resultados["max_trip"]
+    print("\nTrayecto de mayor distancia:")
+    print(f"Inicio: {max_t['pickup_datetime']} | Distancia: {max_t['trip_distance']} millas | Total: {max_t['total_amount']} USD")
+
+    # Preview
+    print("\nPrimeros y últimos 5 trayectos:")
+    headers = ["pickup_datetime", "dropoff_datetime", "duration_min", "distance_miles", "total_amount"]
+    table = [[p[h] for h in headers] for p in resultados["preview"]]
+    print(tabulate(table, headers=headers, tablefmt="grid"))
+    return resultados
 
 
 def print_data(control, id):
@@ -104,7 +133,7 @@ def print_req_8(control):
 control = new_logic()
 
 # main del ejercicio
-def main():
+def main(): # Primera función que se ejecuta al ejecutar el main.py, aquí se desplegan las funciones para el usuario.
     """
     Menu principal
     """
@@ -113,9 +142,9 @@ def main():
     while working:
         print_menu()
         inputs = input('Seleccione una opción para continuar\n')
-        if int(inputs) == 1:
+        if int(inputs) == 1: # Cargar información, es la opción 1
             print("Cargando información de los archivos ....\n")
-            data = load_data(control)
+            resultados = load_data(control) # Se llama la función load_data que carga los datos y muestra los resultados
         elif int(inputs) == 2:
             print_req_1(control)
 
