@@ -32,7 +32,7 @@ def load_data(control):
     """
     Carga los datos
     """
-    taxisfile = data_dir + "taxis-small.csv"           # Contruimos las rutas de los archivos aquí
+    taxisfile = data_dir + "taxis-large.csv"           # Contruimos las rutas de los archivos aquí
     neighfile = data_dir + "nyc-neighborhoods.csv" # Así no hay que importarlos en logic, que es más limpio
     #TODO DONE: Realizar la carga de datos
     resultados = logic.load_data(control, taxisfile, neighfile) # Nota: Aquí se pasa sin el filename porque en logic lo importo por aparte, como se ha hecho en los otros laboratoríos

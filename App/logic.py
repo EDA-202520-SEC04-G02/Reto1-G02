@@ -104,12 +104,12 @@ def get_preview_trips(trips, n=5):
     size = lt.size(trips)
 
     # Primeros n
-    for i in range(1, min(n, size) + 1):
+    for i in range(min(n, size)):
         t = lt.get_element(trips, i)
         preview.append(format_trip(t))
 
     # Últimos n
-    for i in range(max(0, size - n), size):
+    for i in range(max(size - n, 0), size):
         t = lt.get_element(trips, i)
         preview.append(format_trip(t))
 
