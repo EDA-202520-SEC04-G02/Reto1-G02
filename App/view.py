@@ -122,7 +122,26 @@ def print_req_4(control):
         Función que imprime la solución del Requerimiento 4 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 4
-    pass
+    filtro = input("Ingrese el filtro (MAYOR o MENOR): ").strip().upper()
+    fecha_ini = input("Ingrese la fecha inicial (YYYY-MM-DD): ")
+    fecha_fin = input("Ingrese la fecha final (YYYY-MM-DD): ")
+
+    result = logic.req_4(control, filtro, fecha_ini, fecha_fin)
+
+    print("\n=== Resultados Requerimiento 4 ===")
+    print(f"Tiempo de ejecución: {result['time_ms']:.2f} ms")
+    print(f"Filtro: {result['filtro']}")
+    print(f"Total de trayectos en rango: {result['total_trips']}")
+
+    if result["combo"]:
+        c = result["combo"]
+        from tabulate import tabulate
+        headers = ["Barrio origen", "Barrio destino", "Distancia prom (mi)", "Duración prom (min)", "Costo prom (USD)"]
+        table = [[c["origen"], c["destino"], f"{c['avg_dist']:.2f}", f"{c['avg_dur']:.2f}", f"{c['avg_cost']:.2f}"]]
+        print(tabulate(table, headers=headers, tablefmt="grid"))
+    else:
+        print("No se encontraron combinaciones de barrios en el rango dado.")
+
 
 
 def print_req_5(control):

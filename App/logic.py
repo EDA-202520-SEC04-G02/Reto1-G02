@@ -5,6 +5,7 @@ import csv # Para cargar los datos
 from DataStructures.List import array_list as lt # Importo mi implementación de lista para guardar la información
 csv.field_size_limit(2147483647) # Consejo de la guía
 from datetime import datetime # Importamos datetime, porque es MUCHO MEJOR para manejar fechas que hacer todo a mano
+import math
 # -----------------------------------------
 
 def new_logic():
@@ -41,7 +42,7 @@ def load_data(catalog, taxisfile, neighfile):
 
     # Cargar barrios
     with open(neighfile, encoding="utf-8") as f:
-        input_file = csv.DictReader(f)
+        input_file = csv.DictReader(f, delimiter=";") # Esta carga de datos tiene la peculiaridad que usa ; como separador
         for row in input_file:
             lt.add_last(catalog["neighborhoods"], row)
 
@@ -127,6 +128,40 @@ def format_trip(t):
         "distance_miles": float(t["trip_distance"]),
         "total_amount": float(t["total_amount"])
     }
+    
+def find_nearest_neighborhood(neigh_list, lat, lon):
+    """
+    Encuentra el barrio más cercano a un punto (lat, lon)
+    usando la lista de centroides de barrios
+    """
+    size = lt.size(neigh_list)
+    min_dist = float("inf")
+    nearest = None
+    for i in range(size):
+        neigh = lt.get_element(neigh_list, i)
+        # Convertir coma decimal -> punto para usar float
+        nlat = float(neigh["latitude"].replace(",", "."))
+        nlon = float(neigh["longitude"].replace(",", "."))
+        name = neigh["neighborhood"]
+
+        d = haversine(lat, lon, nlat, nlon)
+        if d < min_dist:
+            min_dist = d
+            nearest = name
+    return nearest
+    
+def haversine(lat1, lon1, lat2, lon2): # Esto es literal sacado de ChatGPT porque son calculos que no entiendo
+    """
+    Calcula la distancia haversine en kilómetros entre dos puntos
+    """
+    R = 6371  # radio de la Tierra en km
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+    c = 2*math.atan2(math.sqrt(a), math.sqrt(1-a))
+    return R * c
 
 # Funciones de consulta sobre el catálogo
 
@@ -227,12 +262,93 @@ def req_3(catalog):
     pass
 
 
-def req_4(catalog):
+def req_4(catalog, filtro, fecha_ini, fecha_fin):
     """
     Retorna el resultado del requerimiento 4
     """
     # TODO: Modificar el requerimiento 4
-    pass
+    
+    start = get_time()
+
+    # Convertir strings de fecha a objetos datetime.date
+    date_ini = datetime.strptime(fecha_ini, "%Y-%m-%d").date()
+    date_fin = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+
+    combos = {}
+    total_trips = 0
+
+    size = lt.size(catalog["trips"])
+    for i in range(size):
+        trip = lt.get_element(catalog["trips"], i)
+
+        # Filtrar por fecha de pickup
+        pickup_date = datetime.strptime(trip["pickup_datetime"], "%Y-%m-%d %H:%M:%S").date()
+        if not (date_ini <= pickup_date <= date_fin):
+            continue
+
+        total_trips += 1
+
+        # Identificar barrios
+        plat, plon = float(trip["pickup_latitude"]), float(trip["pickup_longitude"])
+        dlat, dlon = float(trip["dropoff_latitude"]), float(trip["dropoff_longitude"])
+
+        origen = find_nearest_neighborhood(catalog["neighborhoods"], plat, plon)
+        destino = find_nearest_neighborhood(catalog["neighborhoods"], dlat, dlon)
+
+        if origen == destino or origen is None or destino is None:
+            continue
+
+        key = (origen, destino)
+
+        if key not in combos:
+            combos[key] = {
+                "cost_sum": 0.0,
+                "dist_sum": 0.0,
+                "dur_sum": 0.0,
+                "count": 0
+            }
+
+        combos[key]["cost_sum"] += float(trip["total_amount"])
+        combos[key]["dist_sum"] += float(trip["trip_distance"])
+        combos[key]["dur_sum"] += trip_duration_minutes(trip)
+        combos[key]["count"] += 1
+
+    # Calcular promedios y elegir
+    best_combo = None
+    best_val = None
+    for (origen, destino), data in combos.items():
+        avg_cost = data["cost_sum"] / data["count"]
+        avg_dist = data["dist_sum"] / data["count"]
+        avg_dur = data["dur_sum"] / data["count"]
+
+        record = {
+            "origen": origen,
+            "destino": destino,
+            "avg_cost": avg_cost,
+            "avg_dist": avg_dist,
+            "avg_dur": avg_dur
+        }
+
+        if best_combo is None:
+            best_combo = record
+            best_val = avg_cost
+        else:
+            if filtro == "MAYOR" and avg_cost > best_val:
+                best_combo = record
+                best_val = avg_cost
+            elif filtro == "MENOR" and avg_cost < best_val:
+                best_combo = record
+                best_val = avg_cost
+
+    end = get_time()
+    delta = delta_time(start, end)
+
+    return {
+        "time_ms": delta,
+        "filtro": filtro,
+        "total_trips": total_trips,
+        "combo": best_combo
+    }
 
 
 def req_5(catalog):
