@@ -181,18 +181,18 @@ def print_req_4(control):
         Función que imprime la solución del Requerimiento 4 en consola
     """
     # TODO DONE: Imprimir el resultado del requerimiento 4
-    filtro = input("Ingrese el filtro (MAYOR o MENOR): ").strip().upper()
-    fecha_ini = input("Ingrese la fecha inicial (YYYY-MM-DD): ")
-    fecha_fin = input("Ingrese la fecha final (YYYY-MM-DD): ")
+    filtro = input("Ingrese el filtro (MAYOR o MENOR): ").strip().upper() # Primero vemos si tomamos mayor o menor
+    fecha_ini = input("Ingrese la fecha inicial (YYYY-MM-DD): ") # fecha in
+    fecha_fin = input("Ingrese la fecha final (YYYY-MM-DD): ") # fecha out
 
-    result = logic.req_4(control, filtro, fecha_ini, fecha_fin)
+    result = logic.req_4(control, filtro, fecha_ini, fecha_fin) # pasamos a logic
 
-    print("\n=== Resultados Requerimiento 4 ===")
+    print("\n=== Resultados Requerimiento 4 ===") # Imprimimos
     print(f"Tiempo de ejecución: {result['time_ms']:.2f} ms")
     print(f"Filtro: {result['filtro']}")
     print(f"Total de trayectos en rango: {result['total_trips']}")
 
-    if result["combo"]:
+    if result["combo"]: # Esto es jargon de tabulate
         c = result["combo"]
         from tabulate import tabulate
         headers = ["Barrio origen", "Barrio destino", "Distancia prom (mi)", "Duración prom (min)", "Costo prom (USD)"]
@@ -200,7 +200,6 @@ def print_req_4(control):
         print(tabulate(table, headers=headers, tablefmt="grid"))
     else:
         print("No se encontraron combinaciones de barrios en el rango dado.")
-
 
 
 def print_req_5(control):

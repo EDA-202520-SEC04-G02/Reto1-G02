@@ -131,26 +131,25 @@ def format_trip(t): # Formato según requerimientos
     
 def find_nearest_neighborhood(neigh_list, lat, lon):
     """
-    Encuentra el barrio más cercano a un punto (lat, lon)
-    usando la lista de centroides de barrios
+    Encuentra el barrio más cercano a un punto (lat, lon) usando la lista de centroides de barrios
     """
     size = lt.size(neigh_list)
-    min_dist = float("inf")
-    nearest = None
+    nearest_name = None
+    min_dist = None  # empezamos sin valor
+
     for i in range(size):
         neigh = lt.get_element(neigh_list, i)
-        # Convertir coma decimal -> punto para usar float
-        nlat = float(neigh["latitude"].replace(",", "."))
+        nlat = float(neigh["latitude"].replace(",", ".")) # NO MÁS COMAS, ARRIBA LOS PUNTOS!
         nlon = float(neigh["longitude"].replace(",", "."))
-        name = neigh["neighborhood"]
+        dist = haversine(lat, lon, nlat, nlon) # Uso la función recomendada para sacar la distancia entre los puntos
 
-        d = haversine(lat, lon, nlat, nlon)
-        if d < min_dist:
-            min_dist = d
-            nearest = name
-    return nearest
+        if min_dist is None or dist < min_dist:
+            min_dist = dist
+            nearest_name = neigh["neighborhood"]
+
+    return nearest_name
     
-def haversine(lat1, lon1, lat2, lon2): # Esto es literal sacado de ChatGPT porque son calculos que no entiendo
+def haversine(lat1, lon1, lat2, lon2): # Esto es literal sacado de ChatGPT porque son calculos y ya
     """
     Calcula la distancia haversine en kilómetros entre dos puntos
     """
@@ -442,59 +441,66 @@ def req_4(catalog, filtro, fecha_ini, fecha_fin):
     """
     # TODO DONE: Modificar el requerimiento 4
     
+        # inicio tiempo
     start = get_time()
 
-    # Convertir strings de fecha a objetos datetime.date
+    # Convertimos strings a fechas
     date_ini = datetime.strptime(fecha_ini, "%Y-%m-%d").date()
     date_fin = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
 
-    combos = {}
+    combos = {}  # Diccionario de combinaciones origen-destino
     total_trips = 0
 
     size = lt.size(catalog["trips"])
     for i in range(size):
         trip = lt.get_element(catalog["trips"], i)
 
-        # Filtrar por fecha de pickup
+        # Fecha del pickup
         pickup_date = datetime.strptime(trip["pickup_datetime"], "%Y-%m-%d %H:%M:%S").date()
-        if not (date_ini <= pickup_date <= date_fin):
-            continue
 
-        total_trips += 1
+        # Solo procesamos si está dentro del rango
+        if date_ini <= pickup_date <= date_fin:
+            total_trips += 1
 
-        # Identificar barrios
-        plat, plon = float(trip["pickup_latitude"]), float(trip["pickup_longitude"])
-        dlat, dlon = float(trip["dropoff_latitude"]), float(trip["dropoff_longitude"])
+            # Identificar barrios
+            plat, plon = float(trip["pickup_latitude"]), float(trip["pickup_longitude"])
+            dlat, dlon = float(trip["dropoff_latitude"]), float(trip["dropoff_longitude"])
+            
+            # Aquí usamos esta función para determinar el más cercano según centroide
+            
+            origen = find_nearest_neighborhood(catalog["neighborhoods"], plat, plon)
+            destino = find_nearest_neighborhood(catalog["neighborhoods"], dlat, dlon)
 
-        origen = find_nearest_neighborhood(catalog["neighborhoods"], plat, plon)
-        destino = find_nearest_neighborhood(catalog["neighborhoods"], dlat, dlon)
+            # Solo consideramos si origen y destino son diferentes y válidos
+            if origen is not None and destino is not None and origen != destino:
 
-        if origen == destino or origen is None or destino is None:
-            continue
+                key = (origen, destino)
 
-        key = (origen, destino)
+                if key not in combos:
+                    combos[key] = {
+                        "cost_sum": 0.0,
+                        "dist_sum": 0.0,
+                        "dur_sum": 0.0,
+                        "count": 0
+                    }
+                # El contador es un poco más comlicado, porque armamos el key con una tupla, para poder comparar despues
+                combos[key]["cost_sum"] += float(trip["total_amount"])
+                combos[key]["dist_sum"] += float(trip["trip_distance"])
+                combos[key]["dur_sum"] += trip_duration_minutes(trip)
+                combos[key]["count"] += 1
 
-        if key not in combos:
-            combos[key] = {
-                "cost_sum": 0.0,
-                "dist_sum": 0.0,
-                "dur_sum": 0.0,
-                "count": 0
-            }
-
-        combos[key]["cost_sum"] += float(trip["total_amount"])
-        combos[key]["dist_sum"] += float(trip["trip_distance"])
-        combos[key]["dur_sum"] += trip_duration_minutes(trip)
-        combos[key]["count"] += 1
-
-    # Calcular promedios y elegir
+    # Elegir combinación según filtro
     best_combo = None
     best_val = None
-    for (origen, destino), data in combos.items():
+
+    for (origen, destino), data in combos.items(): # Iteramos en cada combo de barrios
+        
+        # Para cada uno calculamos los avg
         avg_cost = data["cost_sum"] / data["count"]
         avg_dist = data["dist_sum"] / data["count"]
         avg_dur = data["dur_sum"] / data["count"]
 
+        # Cuardamos estos datos para comparar
         record = {
             "origen": origen,
             "destino": destino,
@@ -503,17 +509,18 @@ def req_4(catalog, filtro, fecha_ini, fecha_fin):
             "avg_dur": avg_dur
         }
 
+        # Comparamos dependiendo el filtro y así encontramos el mejor o peor combo
         if best_combo is None:
             best_combo = record
             best_val = avg_cost
-        else:
-            if filtro == "MAYOR" and avg_cost > best_val:
-                best_combo = record
-                best_val = avg_cost
-            elif filtro == "MENOR" and avg_cost < best_val:
-                best_combo = record
-                best_val = avg_cost
+        elif filtro == "MAYOR" and avg_cost > best_val:
+            best_combo = record
+            best_val = avg_cost
+        elif filtro == "MENOR" and avg_cost < best_val:
+            best_combo = record
+            best_val = avg_cost
 
+    # fin tiempo
     end = get_time()
     delta = delta_time(start, end)
 
