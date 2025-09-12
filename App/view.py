@@ -72,8 +72,8 @@ def print_req_1(control):
     """
     # TODO DONE: Imprimir el resultado del requerimiento 1
     
-    n = int(input("Ingrese la cantidad de pasajeros a filtrar: "))
-    result = logic.req_1(control, n)
+    n = int(input("Ingrese la cantidad de pasajeros a filtrar: ")) # Pedimos cantidad de pasajeros
+    result = logic.req_1(control, n) # Entramos a logic para sacar los resultados del requerimiento 1
 
     print("\n=== Resultados Requerimiento 1 ===")
     print(f"Tiempo de ejecución: {result['time_ms']:.2f} ms")
@@ -99,7 +99,7 @@ def print_req_1(control):
         result['most_used_payment'],
         result['most_frequent_date']
     ]]
-    print(tabulate(table, headers=headers, tablefmt="grid"))
+    print(tabulate(table, headers=headers, tablefmt="grid")) # De nuevo tabulate, con un poco de ayuda de ChatGPT para formatear los números
 
 
 def print_req_2(control):

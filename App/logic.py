@@ -179,6 +179,7 @@ def req_1(catalog, passenger_count):
     """
     # TODO DONE: Modificar el requerimiento 1
 
+    # inicio tiempo
     start = get_time()
 
     # Acumuladores
@@ -191,48 +192,60 @@ def req_1(catalog, passenger_count):
     payment_counter = {}
     date_counter = {}
 
-    size = lt.size(catalog["trips"])
+    size = lt.size(catalog["trips"]) # Iteramos sobre cada viaje
     for i in range(size):
-        trip = lt.get_element(catalog["trips"], i)
+        trip = lt.get_element(catalog["trips"], i) # Accedemos a la información del viaje
 
         # Solo procesamos si cumple el filtro de pasajeros
         if int(trip["passenger_count"]) == passenger_count:
             total += 1
 
             # Duración
-            durations_sum += trip_duration_minutes(trip)
+            durations_sum += trip_duration_minutes(trip) # Re usamos la función que ya teníamos para duración de minutos
 
-            # Costos y distancias
+            # Costos y distancias, sumamos a los contadores que definimos arriba
             cost_sum += float(trip["total_amount"])
             distance_sum += float(trip["trip_distance"])
             tolls_sum += float(trip["tolls_amount"])
             tips_sum += float(trip["tip_amount"])
 
-            # Medio de pago
+            # Medio de pago, este contador es un poco diferente, usamos un dict para contar cada tipo de pago
             ptype = trip["payment_type"]
             payment_counter[ptype] = payment_counter.get(ptype, 0) + 1
 
-            # Fecha (sin horas)
+            # Fecha (sin horas) Para la fecha más frecuente, usamos otro dict para contar cada fecha (Ojo solo separamos por YYYY-MM-DD)
             date = trip["pickup_datetime"].split(" ")[0]
             date_counter[date] = date_counter.get(date, 0) + 1
 
-    # Resultados
+    # Resultados, con los contadores retornamos los promedios y los más frecuentes
     if total > 0:
         avg_duration = durations_sum / total
         avg_cost = cost_sum / total
         avg_distance = distance_sum / total
         avg_tolls = tolls_sum / total
         avg_tips = tips_sum / total
-        most_used_payment = max(payment_counter.items(), key=lambda x: x[1])
-        most_used_date = max(date_counter.items(), key=lambda x: x[1])
-    else:
-        avg_duration = avg_cost = avg_distance = avg_tolls = avg_tips = 0.0
-        most_used_payment = ("N/A", 0)
-        most_used_date = ("N/A", 0)
+        
+        # Para payment_counter
+        most_used_payment = None
+        max_count = -1 # Contador inicial trivial
+        for payment, count in payment_counter.items(): # Iteramos por cada medio de pago
+            if count > max_count: # Vamos guardando el metodo de pago con mayor count
+                max_count = count
+                most_used_payment = (payment, count)
 
+        # Para date_counter, misma lógica que el payment_counter
+        most_used_date = None
+        max_count = -1
+        for date, count in date_counter.items():
+            if count > max_count:
+                max_count = count
+                most_used_date = (date, count)
+
+    # end time
     end = get_time()
     delta = delta_time(start, end)
 
+    # retornamos resultados para imprimir
     return {
         "time_ms": delta,
         "total_filtered": total,
