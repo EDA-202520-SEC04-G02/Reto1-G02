@@ -172,7 +172,6 @@ def get_data(catalog, id):
     #TODO NO HACER: Consulta en las Llamar la función del modelo para obtener un dato
     pass
 
-
 def req_1(catalog, passenger_count):
     """
     Retorna el resultado del requerimiento 1
@@ -259,20 +258,182 @@ def req_1(catalog, passenger_count):
     }
 
 
-def req_2(catalog):
+def req_2(catalog, payment_method):
     """
     Retorna el resultado del requerimiento 2
     """
-    # TODO: Modificar el requerimiento 2
-    pass
+    # TODO DONE: Modificar el requerimiento 2
 
+    # inicio tiempo
+    start = get_time()
 
-def req_3(catalog):
+    # Acumuladores
+    total = 0
+    durations_sum = 0.0
+    cost_sum = 0.0
+    distance_sum = 0.0
+    tolls_sum = 0.0
+    tips_sum = 0.0
+    passenger_counter = {}
+    date_counter = {}
+
+    size = lt.size(catalog["trips"])
+    for i in range(size):
+        trip = lt.get_element(catalog["trips"], i)
+
+        # Solo procesamos si cumple el filtro del método de pago
+        if trip["payment_type"] == payment_method:
+            total += 1
+
+            # Duración
+            durations_sum += trip_duration_minutes(trip)
+
+            # Costos y distancias
+            cost_sum += float(trip["total_amount"])
+            distance_sum += float(trip["trip_distance"])
+            tolls_sum += float(trip["tolls_amount"])
+            tips_sum += float(trip["tip_amount"])
+
+            # Contador de número de pasajeros
+            pcount = trip["passenger_count"]
+            passenger_counter[pcount] = passenger_counter.get(pcount, 0) + 1
+
+            # Fecha de finalización más frecuente
+            date = trip["dropoff_datetime"].split(" ")[0]
+            date_counter[date] = date_counter.get(date, 0) + 1
+
+    # Resultados
+    if total > 0:
+        avg_duration = durations_sum / total
+        avg_cost = cost_sum / total
+        avg_distance = distance_sum / total
+        avg_tolls = tolls_sum / total
+        avg_tips = tips_sum / total
+
+        # Pasajeros más frecuentes
+        most_used_passenger = None
+        max_count = -1
+        for pcount, count in passenger_counter.items():
+            if count > max_count:
+                max_count = count
+                most_used_passenger = (pcount, count)
+
+        # Fecha más frecuente
+        most_used_date = None
+        max_count = -1
+        for date, count in date_counter.items():
+            if count > max_count:
+                max_count = count
+                most_used_date = (date, count)
+    else: # 
+        avg_duration = avg_cost = avg_distance = avg_tolls = avg_tips = 0
+        most_used_passenger = None
+        most_used_date = None
+
+    # fin tiempo
+    end = get_time()
+    delta = delta_time(start, end)
+
+    return {
+        "time_ms": delta,
+        "total_filtered": total,
+        "avg_duration_min": avg_duration,
+        "avg_cost_usd": avg_cost,
+        "avg_distance_miles": avg_distance,
+        "avg_tolls_usd": avg_tolls,
+        "avg_tips_usd": avg_tips,
+        "most_used_passenger": f"{most_used_passenger[0]} - {most_used_passenger[1]}" if most_used_passenger else None,
+        "most_frequent_date": most_used_date[0] if most_used_date else None
+    }
+
+def req_3(catalog, min_cost, max_cost):
     """
     Retorna el resultado del requerimiento 3
     """
-    # TODO: Modificar el requerimiento 3
-    pass
+    # TODO DONE: Modificar el requerimiento 3
+    
+    # inicio tiempo
+    start = get_time()
+
+    # Acumuladores
+    total = 0
+    durations_sum = 0.0
+    cost_sum = 0.0
+    distance_sum = 0.0
+    tolls_sum = 0.0
+    tips_sum = 0.0
+    passenger_counter = {}
+    date_counter = {}
+
+    size = lt.size(catalog["trips"])
+    for i in range(size):
+        trip = lt.get_element(catalog["trips"], i)
+
+        amount = float(trip["total_amount"])
+        if min_cost <= amount <= max_cost:
+            total += 1
+
+            # Duración
+            durations_sum += trip_duration_minutes(trip)
+
+            # Costos y distancias
+            cost_sum += amount
+            distance_sum += float(trip["trip_distance"])
+            tolls_sum += float(trip["tolls_amount"])
+            tips_sum += float(trip["tip_amount"])
+
+            # Contador de número de pasajeros
+            pcount = trip["passenger_count"]
+            passenger_counter[pcount] = passenger_counter.get(pcount, 0) + 1
+
+            # Fecha de finalización más frecuente
+            date = trip["dropoff_datetime"].split(" ")[0]
+            date_counter[date] = date_counter.get(date, 0) + 1
+
+    # Resultados
+    if total > 0:
+        avg_duration = durations_sum / total
+        avg_cost = cost_sum / total
+        avg_distance = distance_sum / total
+        avg_tolls = tolls_sum / total
+        avg_tips = tips_sum / total
+
+        # Pasajeros más frecuentes
+        most_used_passenger = None
+        max_count = -1
+        for pcount, count in passenger_counter.items():
+            if count > max_count:
+                max_count = count
+                most_used_passenger = (pcount, count)
+
+        # Fecha más frecuente
+        most_used_date = None
+        max_count = -1
+        for date, count in date_counter.items():
+            if count > max_count:
+                max_count = count
+                most_used_date = (date, count)
+    else:
+        avg_duration = avg_cost = avg_distance = avg_tolls = avg_tips = 0
+        most_used_passenger = None
+        most_used_date = None
+
+    # fin tiempo
+    end = get_time()
+    delta = delta_time(start, end)
+
+    return {
+        "time_ms": delta,
+        "total_filtered": total,
+        "avg_duration_min": avg_duration,
+        "avg_cost_usd": avg_cost,
+        "avg_distance_miles": avg_distance,
+        "avg_tolls_usd": avg_tolls,
+        "avg_tips_usd": avg_tips,
+        "most_used_passenger": f"{most_used_passenger[0]} - {most_used_passenger[1]}" if most_used_passenger else None,
+        "most_frequent_date": most_used_date[0] if most_used_date else None
+    }
+
 
 
 def req_4(catalog, filtro, fecha_ini, fecha_fin):

@@ -106,17 +106,75 @@ def print_req_2(control):
     """
         Función que imprime la solución del Requerimiento 2 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 2
-    pass
+    # TODO DONE: Imprimir el resultado del requerimiento 2
+    
+    payment = input("Ingrese el método de pago a filtrar (ej: CASH, CREDIT_CARD): ").strip().upper()
+    result = logic.req_2(control, payment)
 
+    print("\n=== Resultados Requerimiento 2 ===")
+    print(f"Tiempo de ejecución: {result['time_ms']:.2f} ms")
+    print(f"Total de trayectos con pago {payment}: {result['total_filtered']}")
+
+    if result["total_filtered"] > 0:
+        from tabulate import tabulate
+        headers = [
+            "Duración prom (min)",
+            "Costo prom (USD)",
+            "Distancia prom (mi)",
+            "Peajes prom (USD)",
+            "Propina prom (USD)",
+            "Pasajeros más frec.",
+            "Fecha fin más frec."
+        ]
+        table = [[
+            f"{result['avg_duration_min']:.2f}",
+            f"{result['avg_cost_usd']:.2f}",
+            f"{result['avg_distance_miles']:.2f}",
+            f"{result['avg_tolls_usd']:.2f}",
+            f"{result['avg_tips_usd']:.2f}",
+            result['most_used_passenger'],
+            result['most_frequent_date']
+        ]]
+        print(tabulate(table, headers=headers, tablefmt="grid"))
+    else:
+        print("No se encontraron trayectos con ese método de pago.")
 
 def print_req_3(control):
     """
         Función que imprime la solución del Requerimiento 3 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 3
-    pass
+    # TODO DONE: Imprimir el resultado del requerimiento 3
+    min_cost = float(input("Ingrese el valor mínimo del costo total: "))
+    max_cost = float(input("Ingrese el valor máximo del costo total: "))
+    result = logic.req_3(control, min_cost, max_cost)
 
+    print("\n=== Resultados Requerimiento 3 ===")
+    print(f"Tiempo de ejecución: {result['time_ms']:.2f} ms")
+    print(f"Total de trayectos en rango {min_cost}-{max_cost} USD: {result['total_filtered']}")
+
+    if result["total_filtered"] > 0:
+        from tabulate import tabulate
+        headers = [
+            "Duración prom (min)",
+            "Costo prom (USD)",
+            "Distancia prom (mi)",
+            "Peajes prom (USD)",
+            "Propina prom (USD)",
+            "Pasajeros más frec.",
+            "Fecha fin más frec."
+        ]
+        table = [[
+            f"{result['avg_duration_min']:.2f}",
+            f"{result['avg_cost_usd']:.2f}",
+            f"{result['avg_distance_miles']:.2f}",
+            f"{result['avg_tolls_usd']:.2f}",
+            f"{result['avg_tips_usd']:.2f}",
+            result['most_used_passenger'],
+            result['most_frequent_date']
+        ]]
+        print(tabulate(table, headers=headers, tablefmt="grid"))
+    else:
+        print("No se encontraron trayectos en ese rango de costos.")
 
 def print_req_4(control):
     """
