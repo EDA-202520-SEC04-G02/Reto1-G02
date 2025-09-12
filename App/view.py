@@ -206,8 +206,31 @@ def print_req_5(control):
     """
         Función que imprime la solución del Requerimiento 5 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 5
-    pass
+    # TODO DONE: Imprimir el resultado del requerimiento 5
+    filtro = input("Seleccione filtro (MAYOR/MENOR): ").upper()
+    fecha_ini = input("Ingrese fecha inicial (YYYY-MM-DD): ")
+    fecha_fin = input("Ingrese fecha final (YYYY-MM-DD): ")
+
+    result = logic.req_5(control, filtro, fecha_ini, fecha_fin)
+
+    if result["franja"] is None:
+        print("No se encontraron viajes en el rango dado.")
+    else:
+        franja = result["franja"]
+        headers = ["Franja", "Prom. Costo (USD)", "N. Viajes", "Prom. Duración (min)", "Prom. Pasajeros", "Máx. Costo", "Mín. Costo"]
+        table = [[
+            franja["franja"],
+            round(franja["avg_cost"], 2),
+            franja["count"],
+            round(franja["avg_dur"], 2),
+            round(franja["avg_pass"], 2),
+            round(franja["max_cost"], 2),
+            round(franja["min_cost"], 2)
+        ]]
+        print(f"\nTiempo de ejecución: {result['time_ms']} ms")
+        print(f"Filtro aplicado: {result['filtro']}")
+        print(f"Total de viajes procesados: {result['total_trips']}")
+        print(tabulate(table, headers=headers, tablefmt="grid"))
 
 
 def print_req_6(control):

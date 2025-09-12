@@ -531,13 +531,121 @@ def req_4(catalog, filtro, fecha_ini, fecha_fin):
         "combo": best_combo
     }
 
-
-def req_5(catalog):
+def req_5(catalog, filtro, fecha_ini, fecha_fin):
     """
     Retorna el resultado del requerimiento 5
     """
-    # TODO: Modificar el requerimiento 5
-    pass
+    # TODO DONE: Modificar el requerimiento 5
+
+    # inicio tiempo
+    start = get_time()
+
+    # Convertir strings de fecha a objetos datetime.date
+    date_ini = datetime.strptime(fecha_ini, "%Y-%m-%d").date()
+    date_fin = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+
+    franjas = {}   # Diccionario {franja: {...}}
+    total_trips = 0
+
+    size = lt.size(catalog["trips"])
+    for i in range(size):
+        trip = lt.get_element(catalog["trips"], i)
+
+        # Fecha de pickup
+        pickup_dt = datetime.strptime(trip["pickup_datetime"], "%Y-%m-%d %H:%M:%S")
+        pickup_date = pickup_dt.date()
+
+        # Filtrar por rango de fechas
+        if date_ini <= pickup_date <= date_fin:
+            total_trips += 1
+
+            # Definir franja [h - h+1)
+            hour = pickup_dt.hour
+            franja = f"[{hour:02d} - {hour+1:02d})"
+
+            # Si no existe la franja, inicializar
+            if franja not in franjas:
+                franjas[franja] = {
+                    "cost_sum": 0.0,
+                    "dur_sum": 0.0,
+                    "pass_sum": 0,
+                    "count": 0,
+                    "max_trip": None,
+                    "min_trip": None
+                }
+
+            cost = float(trip["total_amount"])
+            duration = trip_duration_minutes(trip)
+            passengers = int(trip["passenger_count"])
+
+            # Acumular
+            franjas[franja]["cost_sum"] += cost
+            franjas[franja]["dur_sum"] += duration
+            franjas[franja]["pass_sum"] += passengers
+            franjas[franja]["count"] += 1
+
+            # Actualizar viaje más caro (desempate por dropoff más reciente)
+            if franjas[franja]["max_trip"] is None:
+                franjas[franja]["max_trip"] = trip
+            else:
+                max_trip = franjas[franja]["max_trip"]
+                if cost > float(max_trip["total_amount"]):
+                    franjas[franja]["max_trip"] = trip
+                elif cost == float(max_trip["total_amount"]):
+                    if trip["dropoff_datetime"] > max_trip["dropoff_datetime"]:
+                        franjas[franja]["max_trip"] = trip
+
+            # Actualizar viaje más barato (desempate por dropoff más reciente)
+            if franjas[franja]["min_trip"] is None:
+                franjas[franja]["min_trip"] = trip
+            else:
+                min_trip = franjas[franja]["min_trip"]
+                if cost < float(min_trip["total_amount"]):
+                    franjas[franja]["min_trip"] = trip
+                elif cost == float(min_trip["total_amount"]):
+                    if trip["dropoff_datetime"] > min_trip["dropoff_datetime"]:
+                        franjas[franja]["min_trip"] = trip
+
+    # Elegir franja según filtro
+    best_franja = None
+    best_val = None
+
+    for franja, data in franjas.items():
+        avg_cost = data["cost_sum"] / data["count"]
+        avg_dur = data["dur_sum"] / data["count"]
+        avg_pass = data["pass_sum"] / data["count"]
+
+        record = {
+            "franja": franja,
+            "avg_cost": avg_cost,
+            "count": data["count"],
+            "avg_dur": avg_dur,
+            "avg_pass": avg_pass,
+            "max_cost": float(data["max_trip"]["total_amount"]),
+            "min_cost": float(data["min_trip"]["total_amount"])
+        }
+
+        if best_franja is None:
+            best_franja = record
+            best_val = avg_cost
+        elif filtro == "MAYOR" and avg_cost > best_val:
+            best_franja = record
+            best_val = avg_cost
+        elif filtro == "MENOR" and avg_cost < best_val:
+            best_franja = record
+            best_val = avg_cost
+
+    # fin tiempo
+    end = get_time()
+    delta = delta_time(start, end)
+
+    return {
+        "time_ms": delta,
+        "filtro": filtro,
+        "total_trips": total_trips,
+        "franja": best_franja
+    }
+
 
 def req_6(catalog):
     """
