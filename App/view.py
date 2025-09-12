@@ -70,7 +70,35 @@ def print_req_1(control):
         Función que imprime la solución del Requerimiento 1 en consola
     """
     # TODO: Imprimir el resultado del requerimiento 1
-    pass
+    
+    n = int(input("Ingrese la cantidad de pasajeros a filtrar: "))
+    result = logic.req_1(control, n)
+
+    print("\n=== Resultados Requerimiento 1 ===")
+    print(f"Tiempo de ejecución: {result['time_ms']:.2f} ms")
+    print(f"Total de trayectos filtrados: {result['total_filtered']}")
+
+    headers = [
+        "Duración prom (min)",
+        "Costo prom (USD)",
+        "Distancia prom (mi)",
+        "Peajes prom (USD)",
+        "Propina prom (USD)",
+        "Medio de pago",
+        "Fecha más frec"
+    ]
+
+    
+    table = [[
+        f"{result['avg_duration_min']:.2f}",
+        f"{result['avg_cost_usd']:.2f}",
+        f"{result['avg_distance_miles']:.2f}",
+        f"{result['avg_tolls_usd']:.2f}",
+        f"{result['avg_tips_usd']:.2f}",
+        result['most_used_payment'],
+        result['most_frequent_date']
+    ]]
+    print(tabulate(table, headers=headers, tablefmt="grid"))
 
 
 def print_req_2(control):
