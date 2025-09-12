@@ -28,14 +28,15 @@ def print_menu():
     print("9- Ejecutar Requerimiento 8 (Bono)")
     print("0- Salir")
 
-def load_data(control):
+def load_data(control): # Note que control es el catalog en view
     """
     Carga los datos
     """
     taxisfile = data_dir + "taxis-large.csv"           # Contruimos las rutas de los archivos aquí
-    neighfile = data_dir + "nyc-neighborhoods.csv" # Así no hay que importarlos en logic, que es más limpio
+    neighfile = data_dir + "nyc-neighborhoods.csv"     # Así no hay que importarlos en logic, que es más limpio
     #TODO DONE: Realizar la carga de datos
-    resultados = logic.load_data(control, taxisfile, neighfile) # Nota: Aquí se pasa sin el filename porque en logic lo importo por aparte, como se ha hecho en los otros laboratoríos
+    resultados = logic.load_data(control, taxisfile, neighfile) # Ahora si me voy a logic a cargar los datos, retorno los resultados
+    
     print("\n=== Resultados de la carga de datos ===")
     print(f"Tiempo de carga: {resultados['time_ms']:.2f} ms")
     print(f"Total de trayectos cargados: {resultados['total_trips']}")
@@ -53,7 +54,7 @@ def load_data(control):
     # Preview
     print("\nPrimeros y últimos 5 trayectos:")
     headers = ["pickup_datetime", "dropoff_datetime", "duration_min", "distance_miles", "total_amount"]
-    table = [[p[h] for h in headers] for p in resultados["preview"]]
+    table = [[p[h] for h in headers] for p in resultados["preview"]] # Con ayuda de char hicimos esta lista de listas para poder usar tabulate
     print(tabulate(table, headers=headers, tablefmt="grid"))
     return resultados
 
@@ -62,14 +63,14 @@ def print_data(control, id):
     """
         Función que imprime un dato dado su ID
     """
-    #TODO: Realizar la función para imprimir un elemento
+    #TODO NO HACER: Realizar la función para imprimir un elemento
     pass
 
 def print_req_1(control):
     """
         Función que imprime la solución del Requerimiento 1 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 1
+    # TODO DONE: Imprimir el resultado del requerimiento 1
     
     n = int(input("Ingrese la cantidad de pasajeros a filtrar: "))
     result = logic.req_1(control, n)
@@ -121,7 +122,7 @@ def print_req_4(control):
     """
         Función que imprime la solución del Requerimiento 4 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 4
+    # TODO DONE: Imprimir el resultado del requerimiento 4
     filtro = input("Ingrese el filtro (MAYOR o MENOR): ").strip().upper()
     fecha_ini = input("Ingrese la fecha inicial (YYYY-MM-DD): ")
     fecha_fin = input("Ingrese la fecha final (YYYY-MM-DD): ")
@@ -164,7 +165,7 @@ def print_req_7(control):
     """
         Función que imprime la solución del Requerimiento 7 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 7
+    # TODO NO HACER: Imprimir el resultado del requerimiento 7
     pass
 
 
@@ -172,7 +173,7 @@ def print_req_8(control):
     """
         Función que imprime la solución del Requerimiento 8 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 8
+    # TODO NO HACER: Imprimir el resultado del requerimiento 8
     pass
 
 

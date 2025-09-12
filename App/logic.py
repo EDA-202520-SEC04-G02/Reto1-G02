@@ -32,26 +32,30 @@ def load_data(catalog, taxisfile, neighfile):
     """
     # TODO DOING: Realizar la carga de datos
     
+    # iniciar tiempo
     start = get_time()
 
     # Cargar trayectos
     with open(taxisfile, encoding="utf-8") as f:
         input_file = csv.DictReader(f)
         for row in input_file:
-            lt.add_last(catalog["trips"], row)
+            lt.add_last(catalog["trips"], row) # Agrego cada fila como un dict a la lista
 
     # Cargar barrios
     with open(neighfile, encoding="utf-8") as f:
         input_file = csv.DictReader(f, delimiter=";") # Esta carga de datos tiene la peculiaridad que usa ; como separador
         for row in input_file:
-            lt.add_last(catalog["neighborhoods"], row)
+            lt.add_last(catalog["neighborhoods"], row) # Agrego cada fila como un dict a la lista
 
+    # Procesar min/max y preview, se hizo con funciones externas
+    min_trip, max_trip = find_min_max_trip(catalog["trips"])
+    
+    # Formatear preview con tabulate
+    preview = get_preview_trips(catalog["trips"], 5)
+
+    # parar tiempo
     end = get_time()
     delta = delta_time(start, end)
-
-    # Procesar min/max y preview
-    min_trip, max_trip = find_min_max_trip(catalog["trips"])
-    preview = get_preview_trips(catalog["trips"], 5)
 
     return {
         "time_ms": delta,
@@ -63,17 +67,17 @@ def load_data(catalog, taxisfile, neighfile):
 
 # Funciones de ayuda
 
-def trip_duration_minutes(trip):
+def trip_duration_minutes(trip): # Esta función nos ayuda a sacar la diferencia de fechas
     """
     Calcula la duración en minutos de un trayecto
     """
-    fmt = "%Y-%m-%d %H:%M:%S"
-    try:
+    fmt = "%Y-%m-%d %H:%M:%S" # Formato de las fechas en el csv
+    if "pickup_datetime" in trip and "dropoff_datetime" in trip: # If para entrar a las fechas de un trip en específico
         pickup = datetime.strptime(trip["pickup_datetime"], fmt)
         dropoff = datetime.strptime(trip["dropoff_datetime"], fmt)
-        return (dropoff - pickup).total_seconds() / 60
-    except Exception:
-        return 0.0
+        return (dropoff - pickup).total_seconds() / 60 # Diferencia en minutos
+    else:
+        return 0.0 # Por si acaso?
 
 
 def find_min_max_trip(trips):
@@ -83,21 +87,18 @@ def find_min_max_trip(trips):
     min_trip = None
     max_trip = None
     size = lt.size(trips)
-    for i in range(size): 
-        t = lt.get_element(trips, i)
-        try:
-            dist = float(t["trip_distance"])
-            if dist > 0:
-                if min_trip is None or dist < float(min_trip["trip_distance"]):
-                    min_trip = t
-                if max_trip is None or dist > float(max_trip["trip_distance"]):
-                    max_trip = t
-        except Exception:
-            continue
-    return min_trip, max_trip
+    for i in range(size): # Iteramos sobre cada viaje
+        t = lt.get_element(trips, i) # accedemos a la información del viaje
+        dist = float(t["trip_distance"]) # sacamos la distancia
+        if dist > 0: # Entramos a comparar solo si la distancia es mayor a 0
+            if min_trip is None or dist < float(min_trip["trip_distance"]): # Este primer if me da la distancia mínima, y va guardando el que cumpla la desigualdad
+                min_trip = t
+            if max_trip is None or dist > float(max_trip["trip_distance"]): # Misma idea pero con la otra desigualdad, así se puede hacer O(n)
+                max_trip = t
+    return min_trip, max_trip # DEvolvemos ambos viajes
 
 
-def get_preview_trips(trips, n=5):
+def get_preview_trips(trips, n=5): # Función para hacer el preview con tabulate
     """
     Retorna los primeros y últimos n trayectos con los campos requeridos
     """
@@ -107,17 +108,16 @@ def get_preview_trips(trips, n=5):
     # Primeros n
     for i in range(min(n, size)):
         t = lt.get_element(trips, i)
-        preview.append(format_trip(t))
+        preview.append(format_trip(t)) # Guardamos los primeros 5
 
     # Últimos n
     for i in range(max(size - n, 0), size):
         t = lt.get_element(trips, i)
-        preview.append(format_trip(t))
+        preview.append(format_trip(t)) # Guardamos los últimos 5
 
     return preview
 
-
-def format_trip(t):
+def format_trip(t): # Formato según requerimientos
     """
     Formatea un trayecto en dict con solo los campos necesarios
     """
@@ -177,7 +177,7 @@ def req_1(catalog, passenger_count):
     """
     Retorna el resultado del requerimiento 1
     """
-    # TODO: Modificar el requerimiento 1
+    # TODO DONE: Modificar el requerimiento 1
 
     start = get_time()
 
@@ -266,7 +266,7 @@ def req_4(catalog, filtro, fecha_ini, fecha_fin):
     """
     Retorna el resultado del requerimiento 4
     """
-    # TODO: Modificar el requerimiento 4
+    # TODO DONE: Modificar el requerimiento 4
     
     start = get_time()
 
@@ -362,7 +362,7 @@ def req_6(catalog):
     """
     Retorna el resultado del requerimiento 6
     """
-    # TODO: Modificar el requerimiento 6
+    # TODO NO HACER: Modificar el requerimiento 6
     pass
 
 
@@ -370,7 +370,7 @@ def req_7(catalog):
     """
     Retorna el resultado del requerimiento 7
     """
-    # TODO: Modificar el requerimiento 7
+    # TODO NO HACER: Modificar el requerimiento 7
     pass
 
 
