@@ -24,8 +24,8 @@ def print_menu():
     print("5- Ejecutar Requerimiento 4")
     print("6- Ejecutar Requerimiento 5")
     print("7- Ejecutar Requerimiento 6")
-    print("8- Ejecutar Requerimiento 7")
-    print("9- Ejecutar Requerimiento 8 (Bono)")
+    print("8- Ejecutar Requerimiento 7 (req6 excluyendo trayectos cuyo destino sea el mismo barrio de origen.)")
+    print("9- Ejecutar Requerimiento 8 (Bono, que no había :C)")
     print("0- Salir")
 
 def load_data(control): # Note que control es el catalog en view
@@ -237,16 +237,78 @@ def print_req_6(control):
     """
         Función que imprime la solución del Requerimiento 6 en consola
     """
-    # TODO: Imprimir el resultado del requerimiento 6
-    pass
+    # TODO DONE: Imprimir el resultado del requerimiento 6
+    barrio_inicio = input("Ingrese el barrio de inicio: ")
+    fecha_ini = input("Ingrese fecha inicial (YYYY-MM-DD): ")
+    fecha_fin = input("Ingrese fecha final (YYYY-MM-DD): ")
+
+    result = logic.req_6(control, barrio_inicio, fecha_ini, fecha_fin)
+
+    if result["total_trips"] == 0:
+        print("No se encontraron viajes en el rango dado desde ese barrio.")
+    else:
+        print(f"\nTiempo de ejecución: {result['time_ms']} ms")
+        print(f"Total de viajes procesados: {result['total_trips']}")
+        print(f"Distancia promedio: {round(result['avg_dist'], 2)} millas")
+        print(f"Duración promedio: {round(result['avg_dur'], 2)} minutos")
+        print(f"Barrio destino más visitado: {result['most_visited']}")
+
+        headers = ["Medio de pago", "N. viajes", "Prom. costo (USD)", "Prom. duración (min)", "Más usado", "Más recaudó"]
+        table = []
+        for p in result["payments"]:
+            row = [
+                p["payment"],
+                p["count"],
+                round(p["avg_cost"], 2),
+                round(p["avg_dur"], 2),
+                "Sí" if p["is_most_used"] else "No",
+                "Sí" if p["is_max_revenue"] else "No"
+            ]
+            table.append(row)
+
+        print("\nEstadísticas por método de pago:")
+        print(tabulate(table, headers=headers, tablefmt="grid"))
 
 
 def print_req_7(control):
     """
         Función que imprime la solución del Requerimiento 7 en consola
     """
-    # TODO NO HACER: Imprimir el resultado del requerimiento 7
-    pass
+    # TODO BONUS: Imprimir el resultado del requerimiento 7
+    """
+    Imprime los resultados del requerimiento 7
+    """
+    barrio_inicio = input("Ingrese el barrio de inicio: ")
+    fecha_ini = input("Ingrese fecha inicial (YYYY-MM-DD): ")
+    fecha_fin = input("Ingrese fecha final (YYYY-MM-DD): ")
+
+    result = logic.req_7(control, barrio_inicio, fecha_ini, fecha_fin)
+
+    if result["total_trips"] == 0:
+        print("No se encontraron viajes válidos (distintos al mismo barrio) en el rango dado.")
+    else:
+        print(f"\nTiempo de ejecución: {result['time_ms']} ms")
+        print(f"Total de viajes procesados: {result['total_trips']}")
+        print(f"Distancia promedio: {round(result['avg_dist'], 2)} millas")
+        print(f"Duración promedio: {round(result['avg_dur'], 2)} minutos")
+        print(f"Barrio destino más visitado (distinto al origen): {result['most_visited']}")
+
+        headers = ["Medio de pago", "N. viajes", "Prom. costo (USD)", "Prom. duración (min)", "Más usado", "Más recaudó"]
+        table = []
+        for p in result["payments"]:
+            row = [
+                p["payment"],
+                p["count"],
+                round(p["avg_cost"], 2),
+                round(p["avg_dur"], 2),
+                "Sí" if p["is_most_used"] else "No",
+                "Sí" if p["is_max_revenue"] else "No"
+            ]
+            table.append(row)
+
+        print("\nEstadísticas por método de pago:")
+        print(tabulate(table, headers=headers, tablefmt="grid"))
+
 
 
 def print_req_8(control):

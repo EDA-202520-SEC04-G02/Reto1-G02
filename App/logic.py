@@ -30,7 +30,7 @@ def load_data(catalog, taxisfile, neighfile):
     """
     Carga los datos del reto
     """
-    # TODO DOING: Realizar la carga de datos
+    # TODO DONE: Realizar la carga de datos
     
     # iniciar tiempo
     start = get_time()
@@ -549,19 +549,19 @@ def req_5(catalog, filtro, fecha_ini, fecha_fin):
 
     size = lt.size(catalog["trips"])
     for i in range(size):
-        trip = lt.get_element(catalog["trips"], i)
+        trip = lt.get_element(catalog["trips"], i) # entramos al catalogo como siempre lo hemos hecho
 
         # Fecha de pickup
         pickup_dt = datetime.strptime(trip["pickup_datetime"], "%Y-%m-%d %H:%M:%S")
         pickup_date = pickup_dt.date()
 
         # Filtrar por rango de fechas
-        if date_ini <= pickup_date <= date_fin:
+        if date_ini <= pickup_date <= date_fin: 
             total_trips += 1
 
             # Definir franja [h - h+1)
             hour = pickup_dt.hour
-            franja = f"[{hour:02d} - {hour+1:02d})"
+            franja = f"[{hour:02d} - {hour+1:02d})" # Formato de la franja segun la guía
 
             # Si no existe la franja, inicializar
             if franja not in franjas:
@@ -574,11 +574,12 @@ def req_5(catalog, filtro, fecha_ini, fecha_fin):
                     "min_trip": None
                 }
 
+            # Cuadramos datos
             cost = float(trip["total_amount"])
             duration = trip_duration_minutes(trip)
             passengers = int(trip["passenger_count"])
 
-            # Acumular
+            # Acumulamos los datos
             franjas[franja]["cost_sum"] += cost
             franjas[franja]["dur_sum"] += duration
             franjas[franja]["pass_sum"] += passengers
@@ -647,27 +648,272 @@ def req_5(catalog, filtro, fecha_ini, fecha_fin):
     }
 
 
-def req_6(catalog):
+def req_6(catalog, barrio_inicio, fecha_ini, fecha_fin):
     """
     Retorna el resultado del requerimiento 6
     """
-    # TODO NO HACER: Modificar el requerimiento 6
-    pass
+    # TODO DONE : Modificar el requerimiento 6
+
+    # inicio tiempo
+    start = get_time()
+
+    # Convertir strings de fecha a objetos datetime.date
+    date_ini = datetime.strptime(fecha_ini, "%Y-%m-%d").date()
+    date_fin = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+
+    total_trips = 0
+    dist_sum = 0.0
+    dur_sum = 0.0
+    dest_counter = {}   # Contador de barrios destino
+    pay_stats = {}      # Estadísticas por método de pago
+
+    size = lt.size(catalog["trips"])
+    for i in range(size):
+        trip = lt.get_element(catalog["trips"], i)
+
+        # Fecha de pickup
+        pickup_dt = datetime.strptime(trip["pickup_datetime"], "%Y-%m-%d %H:%M:%S")
+        pickup_date = pickup_dt.date()
+
+        # Filtrar por rango de fechas
+        if date_ini <= pickup_date <= date_fin:
+
+            # Identificar barrio de origen con haversine
+            plat, plon = float(trip["pickup_latitude"]), float(trip["pickup_longitude"])
+            origen = find_nearest_neighborhood(catalog["neighborhoods"], plat, plon)
+
+            # Solo procesamos si coincide con el barrio buscado
+            if origen == barrio_inicio:
+                total_trips += 1
+
+                # Identificar barrio de destino
+                dlat, dlon = float(trip["dropoff_latitude"]), float(trip["dropoff_longitude"])
+                destino = find_nearest_neighborhood(catalog["neighborhoods"], dlat, dlon)
+
+                # Acumuladores generales
+                dist_sum += float(trip["trip_distance"])
+                dur_sum += trip_duration_minutes(trip)
+
+                # Contador de destinos
+                if destino not in dest_counter:
+                    dest_counter[destino] = 0
+                dest_counter[destino] += 1
+
+                # Estadísticas por medio de pago
+                ptype = trip["payment_type"]
+                if ptype not in pay_stats:
+                    pay_stats[ptype] = {
+                        "count": 0,
+                        "cost_sum": 0.0,
+                        "dur_sum": 0.0
+                    }
+                pay_stats[ptype]["count"] += 1
+                pay_stats[ptype]["cost_sum"] += float(trip["total_amount"])
+                pay_stats[ptype]["dur_sum"] += trip_duration_minutes(trip)
+
+    # Si no hubo viajes, retornamos vacío
+    if total_trips == 0:
+        end = get_time()
+        delta = delta_time(start, end)
+        return {
+            "time_ms": delta,
+            "total_trips": 0,
+            "avg_dist": 0,
+            "avg_dur": 0,
+            "most_visited": None,
+            "payments": []
+        }
+
+    # Promedios generales
+    avg_dist = dist_sum / total_trips
+    avg_dur = dur_sum / total_trips
+
+    # Barrio destino más frecuente
+    most_visited = None
+    max_dest_count = -1
+    for dest, count in dest_counter.items():
+        if count > max_dest_count:
+            most_visited = dest
+            max_dest_count = count
+
+    # Estadísticas por método de pago
+    max_used = None
+    max_used_count = -1
+    max_revenue = None
+    max_revenue_val = -1.0
+
+    for ptype, stats in pay_stats.items():
+        if stats["count"] > max_used_count:
+            max_used = ptype
+            max_used_count = stats["count"]
+        if stats["cost_sum"] > max_revenue_val:
+            max_revenue = ptype
+            max_revenue_val = stats["cost_sum"]
+
+    payments_result = []
+    for ptype, stats in pay_stats.items():
+        record = {
+            "payment": ptype,
+            "count": stats["count"],
+            "avg_cost": stats["cost_sum"] / stats["count"],
+            "avg_dur": stats["dur_sum"] / stats["count"],
+            "is_most_used": (ptype == max_used),
+            "is_max_revenue": (ptype == max_revenue)
+        }
+        payments_result.append(record)
+
+    # fin tiempo
+    end = get_time()
+    delta = delta_time(start, end)
+
+    return {
+        "time_ms": delta,
+        "total_trips": total_trips,
+        "avg_dist": avg_dist,
+        "avg_dur": avg_dur,
+        "most_visited": most_visited,
+        "payments": payments_result
+    }
 
 
-def req_7(catalog):
+
+def req_7(catalog, barrio_inicio, fecha_ini, fecha_fin):
     """
     Retorna el resultado del requerimiento 7
     """
-    # TODO NO HACER: Modificar el requerimiento 7
-    pass
+    # TODO BONUS: Modificar el requerimiento 7
+    """
+    Requerimiento 7:
+    Igual que el Req 6, pero excluyendo trayectos cuyo destino sea el mismo barrio de origen.
+    """
+
+    # inicio tiempo
+    start = get_time()
+
+    # Convertir strings de fecha a objetos datetime.date
+    date_ini = datetime.strptime(fecha_ini, "%Y-%m-%d").date()
+    date_fin = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+
+    total_trips = 0
+    dist_sum = 0.0
+    dur_sum = 0.0
+    dest_counter = {}
+    pay_stats = {}
+
+    size = lt.size(catalog["trips"])
+    for i in range(size):
+        trip = lt.get_element(catalog["trips"], i)
+
+        # Fecha de pickup
+        pickup_dt = datetime.strptime(trip["pickup_datetime"], "%Y-%m-%d %H:%M:%S")
+        pickup_date = pickup_dt.date()
+
+        if date_ini <= pickup_date <= date_fin:
+            # Identificar barrio origen
+            plat, plon = float(trip["pickup_latitude"]), float(trip["pickup_longitude"])
+            origen = find_nearest_neighborhood(catalog["neighborhoods"], plat, plon)
+
+            if origen == barrio_inicio:
+                # Identificar destino
+                dlat, dlon = float(trip["dropoff_latitude"]), float(trip["dropoff_longitude"])
+                destino = find_nearest_neighborhood(catalog["neighborhoods"], dlat, dlon)
+
+                # EXCLUIR viajes donde origen == destino
+                if destino != origen:
+                    total_trips += 1
+
+                    # Acumuladores generales
+                    dist_sum += float(trip["trip_distance"])
+                    dur_sum += trip_duration_minutes(trip)
+
+                    # Contador de destinos
+                    if destino not in dest_counter:
+                        dest_counter[destino] = 0
+                    dest_counter[destino] += 1
+
+                    # Estadísticas de pago
+                    ptype = trip["payment_type"]
+                    if ptype not in pay_stats:
+                        pay_stats[ptype] = {
+                            "count": 0,
+                            "cost_sum": 0.0,
+                            "dur_sum": 0.0
+                        }
+                    pay_stats[ptype]["count"] += 1
+                    pay_stats[ptype]["cost_sum"] += float(trip["total_amount"])
+                    pay_stats[ptype]["dur_sum"] += trip_duration_minutes(trip)
+
+    # Si no hubo viajes, devolvemos vacío
+    if total_trips == 0:
+        end = get_time()
+        delta = delta_time(start, end)
+        return {
+            "time_ms": delta,
+            "total_trips": 0,
+            "avg_dist": 0,
+            "avg_dur": 0,
+            "most_visited": None,
+            "payments": []
+        }
+
+    # Promedios generales
+    avg_dist = dist_sum / total_trips
+    avg_dur = dur_sum / total_trips
+
+    # Barrio destino más frecuente (distinto al origen)
+    most_visited = None
+    max_count = -1
+    for dest, count in dest_counter.items():
+        if count > max_count:
+            most_visited = dest
+            max_count = count
+
+    # Pago más usado y el que más recaudó
+    max_used = None
+    max_used_count = -1
+    max_revenue = None
+    max_revenue_val = -1.0
+
+    for ptype, stats in pay_stats.items():
+        if stats["count"] > max_used_count:
+            max_used = ptype
+            max_used_count = stats["count"]
+        if stats["cost_sum"] > max_revenue_val:
+            max_revenue = ptype
+            max_revenue_val = stats["cost_sum"]
+
+    payments_result = []
+    for ptype, stats in pay_stats.items():
+        record = {
+            "payment": ptype,
+            "count": stats["count"],
+            "avg_cost": stats["cost_sum"] / stats["count"],
+            "avg_dur": stats["dur_sum"] / stats["count"],
+            "is_most_used": (ptype == max_used),
+            "is_max_revenue": (ptype == max_revenue)
+        }
+        payments_result.append(record)
+
+    # fin tiempo
+    end = get_time()
+    delta = delta_time(start, end)
+
+    return {
+        "time_ms": delta,
+        "total_trips": total_trips,
+        "avg_dist": avg_dist,
+        "avg_dur": avg_dur,
+        "most_visited": most_visited,
+        "payments": payments_result
+    }
+
 
 
 def req_8(catalog):
     """
     Retorna el resultado del requerimiento 8
     """
-    # TODO: Modificar el requerimiento 8
+    # TODO NO HACER: Modificar el requerimiento 8
     pass
 
 
