@@ -544,7 +544,7 @@ def req_5(catalog, filtro, fecha_ini, fecha_fin):
     date_ini = datetime.strptime(fecha_ini, "%Y-%m-%d").date()
     date_fin = datetime.strptime(fecha_fin, "%Y-%m-%d").date()
 
-    franjas = {}   # Diccionario {franja: {...}}
+    franjas = {}   # Diccionario {franja: {..}}
     total_trips = 0
 
     size = lt.size(catalog["trips"])
