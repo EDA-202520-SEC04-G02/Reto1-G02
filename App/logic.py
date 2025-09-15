@@ -153,7 +153,7 @@ def haversine(lat1, lon1, lat2, lon2): # Esto es literal sacado de ChatGPT porqu
     """
     Calcula la distancia haversine en kilómetros entre dos puntos
     """
-    R = 6371  # radio de la Tierra en km
+    R = 3959  # radio de la Tierra en mi
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
     dlambda = math.radians(lon2 - lon1)
@@ -479,15 +479,19 @@ def req_4(catalog, filtro, fecha_ini, fecha_fin):
                 if key not in combos:
                     combos[key] = {
                         "cost_sum": 0.0,
-                        "dist_sum": 0.0,
+                        "dist_csv_sum": 0.0,   # distancia del CSV
+                        "dist_hav_sum": 0.0,   # distancia con haversine
                         "dur_sum": 0.0,
                         "count": 0
                     }
                 # El contador es un poco más comlicado, porque armamos el key con una tupla, para poder comparar despues
+                # Sumamos costo, distancia reportada en el CSV y duración
                 combos[key]["cost_sum"] += float(trip["total_amount"])
-                combos[key]["dist_sum"] += float(trip["trip_distance"])
+                combos[key]["dist_csv_sum"] += float(trip["trip_distance"])
+                combos[key]["dist_hav_sum"] += haversine(plat, plon, dlat, dlon)
                 combos[key]["dur_sum"] += trip_duration_minutes(trip)
                 combos[key]["count"] += 1
+
 
     # Elegir combinación según filtro
     best_combo = None
@@ -497,15 +501,18 @@ def req_4(catalog, filtro, fecha_ini, fecha_fin):
         
         # Para cada uno calculamos los avg
         avg_cost = data["cost_sum"] / data["count"]
-        avg_dist = data["dist_sum"] / data["count"]
+        avg_dist_csv = data["dist_csv_sum"] / data["count"]
+        avg_dist_hav = data["dist_hav_sum"] / data["count"]
         avg_dur = data["dur_sum"] / data["count"]
+
 
         # Cuardamos estos datos para comparar
         record = {
             "origen": origen,
             "destino": destino,
             "avg_cost": avg_cost,
-            "avg_dist": avg_dist,
+            "avg_dist_csv": avg_dist_csv,
+            "avg_dist_hav": avg_dist_hav,
             "avg_dur": avg_dur
         }
 

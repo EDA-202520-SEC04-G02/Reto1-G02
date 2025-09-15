@@ -192,11 +192,24 @@ def print_req_4(control):
     print(f"Filtro: {result['filtro']}")
     print(f"Total de trayectos en rango: {result['total_trips']}")
 
-    if result["combo"]: # Esto es jargon de tabulate
+    if result["combo"]:
         c = result["combo"]
-        from tabulate import tabulate
-        headers = ["Barrio origen", "Barrio destino", "Distancia prom (mi)", "Duración prom (min)", "Costo prom (USD)"]
-        table = [[c["origen"], c["destino"], f"{c['avg_dist']:.2f}", f"{c['avg_dur']:.2f}", f"{c['avg_cost']:.2f}"]]
+        headers = [
+            "Barrio origen",
+            "Barrio destino",
+            "Distancia prom (CSV, mi)",
+            "Distancia prom (Haversine, mi)",
+            "Duración prom (min)",
+            "Costo prom (USD)",
+        ]
+        table = [[
+            c["origen"],
+            c["destino"],
+            f"{c['avg_dist_csv']:.2f}",
+            f"{c['avg_dist_hav']:.2f}",
+            f"{c['avg_dur']:.2f}",
+            f"{c['avg_cost']:.2f}"
+        ]]
         print(tabulate(table, headers=headers, tablefmt="grid"))
     else:
         print("No se encontraron combinaciones de barrios en el rango dado.")
