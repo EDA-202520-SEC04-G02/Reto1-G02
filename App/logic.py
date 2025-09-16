@@ -149,18 +149,19 @@ def find_nearest_neighborhood(neigh_list, lat, lon):
 
     return nearest_name
     
-def haversine(lat1, lon1, lat2, lon2): # Esto es literal sacado de ChatGPT porque son calculos y ya
+def haversine(lat1, lon1, lat2, lon2): # Esto es literal sacado de wikipedia básicamente
     """
     Calcula la distancia haversine en kilómetros entre dos puntos
     """
     R = 3959  # radio de la Tierra en mi
+    # Hay que importar ¡math!
     phi1, phi2 = math.radians(lat1), math.radians(lat2)
     dphi = math.radians(lat2 - lat1)
     dlambda = math.radians(lon2 - lon1)
 
     a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
     c = 2*math.atan2(math.sqrt(a), math.sqrt(1-a))
-    return R * c
+    return R * c # Note que se usa un radio de la tierra  sin decimales, no vamos a tener tanta precisión
 
 # Funciones de consulta sobre el catálogo
 
@@ -596,14 +597,15 @@ def req_5(catalog, filtro, fecha_ini, fecha_fin):
             if franjas[franja]["max_trip"] is None:
                 franjas[franja]["max_trip"] = trip
             else:
-                max_trip = franjas[franja]["max_trip"]
-                if cost > float(max_trip["total_amount"]):
-                    franjas[franja]["max_trip"] = trip
-                elif cost == float(max_trip["total_amount"]):
-                    if trip["dropoff_datetime"] > max_trip["dropoff_datetime"]:
-                        franjas[franja]["max_trip"] = trip
+                max_trip = franjas[franja]["max_trip"] # Accedo al max trip que ya esta
+                if cost > float(max_trip["total_amount"]): # Miro si en efecto es el que tiene el viaje más caro
+                    franjas[franja]["max_trip"] = trip     # Si lo es, lo actualizo 
+                elif cost == float(max_trip["total_amount"]): # Si soy tan de malas que es igual
+                    if trip["dropoff_datetime"] > max_trip["dropoff_datetime"]: # Des-empate segun la guía
+                        franjas[franja]["max_trip"] = trip # aja
 
             # Actualizar viaje más barato (desempate por dropoff más reciente)
+            # Note que es igual a la función de arriba ^ pero se cambia el > por <.
             if franjas[franja]["min_trip"] is None:
                 franjas[franja]["min_trip"] = trip
             else:
