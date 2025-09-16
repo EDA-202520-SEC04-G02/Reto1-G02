@@ -698,7 +698,7 @@ def req_6(catalog, barrio_inicio, fecha_ini, fecha_fin):
                 destino = find_nearest_neighborhood(catalog["neighborhoods"], dlat, dlon)
 
                 # Acumuladores generales
-                dist_sum += float(trip["trip_distance"])
+                dist_sum += haversine(plat, plon, dlat, dlon)
                 dur_sum += trip_duration_minutes(trip)
 
                 # Contador de destinos
